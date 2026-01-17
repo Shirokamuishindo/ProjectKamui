@@ -3,6 +3,23 @@ local player = Players.LocalPlayer
 local statz = player:WaitForChild("statz")
 local TeleportService = game:GetService("TeleportService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- ESP globals (declarados cedo para serem acessíveis pelo InputBegan)
+local espAtivo = false
+local espBillboards = {}
+local espUpdateConn
+local espPlayerAddedConn, espPlayerRemovingConn
+
+-- Variáveis para seleção de jogador com scroll
+local jogadorSelecionadoTeleport = nil
+local jogadoresLista = {}
+local indiceSelecionado = 1
+local listaAtiva = false
+local wheelConn
+local lastCtrlTime = 0
+local ctrlCount = 0
+local inputBeganESPConn = nil
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "SatoriHubHUD"
@@ -25,8 +42,63 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0,15)
 
 frame:TweenSize(UDim2.new(0, 400, 0, 280), "Out", "Quad", 0.4, true)
 
+-- Label de ping no topo da tela
+local pingLabelTopo = Instance.new("TextLabel", gui)
+pingLabelTopo.Size = UDim2.new(0, 150, 0, 30)
+-- mover para canto inferior direito um pouco acima
+pingLabelTopo.Position = UDim2.new(1, -180, 1, -60)
+pingLabelTopo.BackgroundColor3 = Color3.fromRGB(20,20,20)
+pingLabelTopo.BackgroundTransparency = 0.2
+pingLabelTopo.TextColor3 = Color3.new(1,1,1)
+pingLabelTopo.Font = Enum.Font.GothamBold
+pingLabelTopo.TextSize = 16
+pingLabelTopo.TextXAlignment = Enum.TextXAlignment.Center
+pingLabelTopo.ZIndex = 100
+Instance.new("UICorner", pingLabelTopo).CornerRadius = UDim.new(0,10)
+
+-- Indicador simples de ESP
+
+
+-- Loop para atualizar ping no topo
+game:GetService("RunService").Heartbeat:Connect(function()
+    local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+    pingLabelTopo.Text = "Ping: " .. math.floor(ping) .. "ms"
+end)
+
+-- GUI para lista de jogadores
+local listaGui = Instance.new("Frame", gui)
+listaGui.Size = UDim2.new(0, 250, 0, 80)
+listaGui.Position = UDim2.new(0.5, -125, 0, 50)
+listaGui.BackgroundColor3 = Color3.fromRGB(15,15,15)
+listaGui.BackgroundTransparency = 0.1
+listaGui.Visible = false
+listaGui.ZIndex = 10
+Instance.new("UICorner", listaGui).CornerRadius = UDim.new(0,15)
+
+local tituloLista = Instance.new("TextLabel", listaGui)
+tituloLista.Size = UDim2.new(1, 0, 0, 25)
+tituloLista.Position = UDim2.new(0, 0, 0, 5)
+tituloLista.Text = "Selecionar Jogador para Teleport"
+tituloLista.TextColor3 = Color3.new(1,1,1)
+tituloLista.BackgroundTransparency = 1
+tituloLista.Font = Enum.Font.GothamBold
+tituloLista.TextSize = 14
+tituloLista.TextXAlignment = Enum.TextXAlignment.Center
+tituloLista.ZIndex = 11
+
+local listaLabel = Instance.new("TextLabel", listaGui)
+listaLabel.Size = UDim2.new(1, 0, 0, 30)
+listaLabel.Position = UDim2.new(0, 0, 0, 35)
+listaLabel.Text = "..."
+listaLabel.TextColor3 = Color3.new(1,1,1)
+listaLabel.BackgroundTransparency = 1
+listaLabel.Font = Enum.Font.GothamBold
+listaLabel.TextSize = 18
+listaLabel.TextXAlignment = Enum.TextXAlignment.Center
+listaLabel.ZIndex = 11
+
 local header = Instance.new("TextLabel", frame)
-header.Size = UDim2.new(1, -20, 0, 30)
+header.Size = UDim2.new(1, -60, 0, 30)
 header.Position = UDim2.new(0, 10, 0, 5)
 header.Text = "Satori Hub"
 header.TextColor3 = Color3.new(1,1,1)
@@ -37,7 +109,7 @@ header.TextXAlignment = Enum.TextXAlignment.Left
 header.ZIndex = 2
 
 local subHeader = Instance.new("TextLabel", frame)
-subHeader.Size = UDim2.new(1, -20, 0, 20)
+subHeader.Size = UDim2.new(1, -60, 0, 20)
 subHeader.Position = UDim2.new(0, 10, 0, 35)
 subHeader.Text = "by kylekamui"
 subHeader.TextColor3 = Color3.fromRGB(180,180,180)
@@ -49,7 +121,7 @@ subHeader.ZIndex = 2
 
 local minimizarBtn = Instance.new("TextButton", frame)
 minimizarBtn.Size = UDim2.new(0, 25, 0, 25)
-minimizarBtn.Position = UDim2.new(1, -30, 0, 5)
+minimizarBtn.Position = UDim2.new(1, -55, 0, 5)
 minimizarBtn.Text = "-"
 minimizarBtn.TextColor3 = Color3.fromRGB(200,200,200)
 minimizarBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
@@ -63,29 +135,277 @@ minimizarBtn.MouseButton1Click:Connect(function()
     frame.Visible = false
 end)
 
--- Scroll do mouse abre/fecha o hub
-UserInputService.InputBegan:Connect(function(input, processed)
+local fecharBtn = Instance.new("TextButton", frame)
+fecharBtn.Size = UDim2.new(0, 25, 0, 25)
+fecharBtn.Position = UDim2.new(1, -30, 0, 5)
+fecharBtn.Text = "X"
+fecharBtn.TextColor3 = Color3.fromRGB(200,200,200)
+fecharBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+fecharBtn.BackgroundTransparency = 0.3
+fecharBtn.Font = Enum.Font.GothamBold
+fecharBtn.TextSize = 20
+fecharBtn.ZIndex = 3
+Instance.new("UICorner", fecharBtn).CornerRadius = UDim.new(0,6)
+
+fecharBtn.MouseButton1Click:Connect(function()
+    -- Encerrar todas as tarefas
+    aimbotAtivo = false
+    alvoSelecionado = nil
+    if assistindo then
+        assistindo = nil
+        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
+    end
+    jogadorSelecionado = nil
+    jogadorSelecionadoTeleport = nil
+    -- Desconectar conexões
+    if renderSteppedConn then renderSteppedConn:Disconnect() end
+    if inputBeganConn1 then inputBeganConn1:Disconnect() end
+    if inputBeganConn2 then inputBeganConn2:Disconnect() end
+    if inputBeganConn3 then inputBeganConn3:Disconnect() end
+    if inputBeganESPConn then inputBeganESPConn:Disconnect() end
+    if playerAddedConn then playerAddedConn:Disconnect() end
+    if playerRemovingConn then playerRemovingConn:Disconnect() end
+    if wheelConn then wheelConn:Disconnect() end
+    -- Destruir GUI
+    -- Desativar ESP e desconectar conexões relacionadas
+    if disableESP then pcall(disableESP) end
+    if espUpdateConn then espUpdateConn:Disconnect() end
+    if espPlayerAddedConn then espPlayerAddedConn:Disconnect() end
+    if espPlayerRemovingConn then espPlayerRemovingConn:Disconnect() end
+    gui:Destroy()
+end)
+
+-- Função para atualizar lista de jogadores
+local function atualizarListaJogadores()
+    jogadoresLista = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            table.insert(jogadoresLista, plr)
+        end
+    end
+    if #jogadoresLista > 0 then
+        indiceSelecionado = math.min(indiceSelecionado, #jogadoresLista)
+        jogadorSelecionadoTeleport = jogadoresLista[indiceSelecionado]
+    else
+        jogadorSelecionadoTeleport = nil
+    end
+end
+
+-- Função para atualizar o texto da lista
+local function atualizarTexto()
+    if #jogadoresLista > 0 and indiceSelecionado <= #jogadoresLista then
+        listaLabel.Text = jogadoresLista[indiceSelecionado].Name
+        jogadorSelecionadoTeleport = jogadoresLista[indiceSelecionado]
+    else
+        listaLabel.Text = "..."
+        jogadorSelecionadoTeleport = nil
+    end
+end
+
+-- Função para mostrar lista
+local function mostrarLista()
+    atualizarListaJogadores()
+    listaLabel.Text = "..."
+    indiceSelecionado = 1
+    atualizarTexto()
+    listaGui.Visible = true
+    -- Conectar wheel
+    wheelConn = UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseWheel then
+            if input.Position.Z > 0 then
+                indiceSelecionado = math.max(1, indiceSelecionado - 1)
+            else
+                indiceSelecionado = math.min(#jogadoresLista, indiceSelecionado + 1)
+            end
+            atualizarTexto()
+        end
+    end)
+end
+
+-- Listeners para input
+inputBeganConn1 = UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.UserInputType == Enum.UserInputType.MouseButton3 then
-        frame.Visible = not frame.Visible
-        if frame.Visible then
-            frame.Size = UDim2.new(0, 0, 0, 0)
-            frame:TweenSize(UDim2.new(0, 400, 0, 280), "Out", "Quad", 0.3, true)
+        if listaAtiva then
+            listaGui.Visible = false
+            if wheelConn then wheelConn:Disconnect() end
+            listaAtiva = false
+        else
+            mostrarLista()
+            listaAtiva = true
         end
+    elseif input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+        local currentTime = tick()
+        if currentTime - lastCtrlTime < 0.5 then
+            ctrlCount = ctrlCount + 1
+            if ctrlCount >= 2 then
+                frame.Visible = not frame.Visible
+                if frame.Visible then
+                    frame.Size = UDim2.new(0, 0, 0, 0)
+                    frame:TweenSize(UDim2.new(0, 400, 0, 280), "Out", "Quad", 0.3, true)
+                end
+                ctrlCount = 0
+            end
+        else
+            ctrlCount = 1
+        end
+        lastCtrlTime = currentTime
+    
     end
 end)
 
 -- Área de conteúdo
-local content = Instance.new("Frame", frame)
+-- Área de conteúdo agora é um ScrollingFrame para ficar mais dinâmica
+local content = Instance.new("ScrollingFrame", frame)
 content.Size = UDim2.new(1, -120, 1, -60)
 content.Position = UDim2.new(0, 120, 0, 60)
 content.BackgroundTransparency = 1
 content.ZIndex = 2
+content.CanvasSize = UDim2.new(0,0,0,0)
+content.ScrollBarThickness = 8
 
 local layout = Instance.new("UIListLayout", content)
 layout.Padding = UDim.new(0,12)
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 layout.VerticalAlignment = Enum.VerticalAlignment.Top
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Atualiza CanvasSize do content automaticamente
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    content.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 20)
+end)
+
+-- Área de abas (esquerda) como ScrollingFrame para evitar overflow
+local tabsFrame = Instance.new("ScrollingFrame", frame)
+tabsFrame.Name = "TabsFrame"
+tabsFrame.Size = UDim2.new(0, 100, 1, -120)
+tabsFrame.Position = UDim2.new(0, 10, 0, 60)
+tabsFrame.BackgroundTransparency = 1
+tabsFrame.ScrollBarThickness = 6
+tabsFrame.ZIndex = 2
+
+local tabsLayout = Instance.new("UIListLayout", tabsFrame)
+tabsLayout.Padding = UDim.new(0,8)
+tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    tabsFrame.CanvasSize = UDim2.new(0, 0, 0, tabsLayout.AbsoluteContentSize.Y + 12)
+end)
+
+-- =========================
+-- ESP Básico (BillboardGui sobre o humanoid)
+-- Toggle com Tab, atualiza vida em formato 'k' quando aplicável
+-- =========================
+-- (variáveis RunService/esp já foram declaradas acima)
+
+local function formatHP(hp)
+    hp = math.max(0, math.floor(hp or 0))
+    if hp >= 1000 then
+        local v = math.floor(hp/1000)
+        return tostring(v) .. "k"
+    else
+        return tostring(hp)
+    end
+end
+
+local function criarESPParaJogador(plr)
+    if espBillboards[plr] then return end
+    if not plr or not plr.Character then return end
+    local char = plr.Character
+    local adornee = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+    if not adornee then return end
+
+    local b = Instance.new("BillboardGui")
+    b.Name = "SatoriESP"
+    b.Adornee = adornee
+    b.Size = UDim2.new(0, 140, 0, 36)
+    b.AlwaysOnTop = true
+    b.MaxDistance = 1e6
+    b.StudsOffset = Vector3.new(0, 3, 0)
+    b.Parent = gui
+
+    local lbl = Instance.new("TextLabel", b)
+    lbl.Size = UDim2.new(1,0,1,0)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.new(1,1,1)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 14
+    lbl.TextStrokeTransparency = 0.6
+    lbl.TextYAlignment = Enum.TextYAlignment.Center
+    lbl.TextXAlignment = Enum.TextXAlignment.Center
+
+    espBillboards[plr] = {gui = b, label = lbl}
+end
+
+local function removerESPParaJogador(plr)
+    local data = espBillboards[plr]
+    if data and data.gui then
+        data.gui:Destroy()
+    end
+    espBillboards[plr] = nil
+end
+
+local function atualizarTodosESP()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            if espAtivo and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                criarESPParaJogador(plr)
+                local data = espBillboards[plr]
+                if data and data.label then
+                    local hp = plr.Character.Humanoid.Health or 0
+                    data.label.Text = plr.Name .. "\nHP: " .. formatHP(hp)
+                end
+            else
+                removerESPParaJogador(plr)
+            end
+        end
+    end
+end
+
+local function disableESP()
+    espAtivo = false
+    for plr,_ in pairs(espBillboards) do
+        removerESPParaJogador(plr)
+    end
+end
+
+local function enableESP()
+    espAtivo = true
+    atualizarTodosESP()
+end
+
+-- atualiza periodicamente a vida
+do
+    local acc = 0
+    espUpdateConn = RunService.Heartbeat:Connect(function(dt)
+        if not espAtivo then return end
+        acc = acc + dt
+        if acc >= 0.25 then
+            atualizarTodosESP()
+            acc = 0
+        end
+    end)
+end
+
+espPlayerAddedConn = Players.PlayerAdded:Connect(function(plr)
+    if espAtivo then criarESPParaJogador(plr) end
+end)
+espPlayerRemovingConn = Players.PlayerRemoving:Connect(function(plr)
+    removerESPParaJogador(plr)
+end)
+
+-- Listener separado para Tab (garante que funções ESP já existam)
+inputBeganESPConn = UserInputService.InputBegan:Connect(function(input, processed)
+    -- Allow Tab to toggle even if 'processed' (e.g. scoreboard), so only skip for other keys
+    if input.KeyCode ~= Enum.KeyCode.Tab and processed then return end
+    if input.KeyCode == Enum.KeyCode.Tab then
+        if espAtivo then
+            disableESP()
+        else
+            enableESP()
+        end
+    end
+end)
 
 -- Função para criar botão com descrição
 local function criarBotaoComDescricao(titulo, descricao)
@@ -121,9 +441,8 @@ local function criarBotaoComDescricao(titulo, descricao)
 end
 
 -- Botão SLOT
-local slotBtn = Instance.new("TextButton", frame)
-slotBtn.Size = UDim2.new(0, 100, 0, 35)
-slotBtn.Position = UDim2.new(0, 10, 0, 60)
+local slotBtn = Instance.new("TextButton", tabsFrame)
+slotBtn.Size = UDim2.new(1, 0, 0, 35)
 slotBtn.Text = "SLOT"
 slotBtn.TextColor3 = Color3.new(1,1,1)
 slotBtn.BackgroundTransparency = 1
@@ -133,6 +452,7 @@ slotBtn.AutoButtonColor = false
 slotBtn.ZIndex = 2
 
 slotBtn.MouseButton1Click:Connect(function()
+    disableESP()
     for _, child in ipairs(content:GetChildren()) do
         if not child:IsA("UIListLayout") then child:Destroy() end
     end
@@ -171,9 +491,8 @@ slotBtn.MouseButton1Click:Connect(function()
     end)
 end)
 -- Botão PVP
-local pvpBtn = Instance.new("TextButton", frame)
-pvpBtn.Size = UDim2.new(0, 100, 0, 35)
-pvpBtn.Position = UDim2.new(0, 10, 0, 100)
+local pvpBtn = Instance.new("TextButton", tabsFrame)
+pvpBtn.Size = UDim2.new(1, 0, 0, 35)
 pvpBtn.Text = "PVP"
 pvpBtn.TextColor3 = Color3.new(1,1,1)
 pvpBtn.BackgroundTransparency = 1
@@ -224,6 +543,7 @@ local aimbotAtivo = false
 
 -- Aba PVP
 pvpBtn.MouseButton1Click:Connect(function()
+    disableESP()
     for _, child in ipairs(content:GetChildren()) do
         if not child:IsA("UIListLayout") then child:Destroy() end
     end
@@ -238,7 +558,7 @@ pvpBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Listener para ativar/desativar aimbot com tecla 2
-UserInputService.InputBegan:Connect(function(input, processed)
+inputBeganConn2 = UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.Two then
         if not aimbotAtivo then
@@ -254,7 +574,7 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 
 -- Loop para manter mira sempre no mesmo alvo
-game:GetService("RunService").RenderStepped:Connect(function()
+renderSteppedConn = game:GetService("RunService").RenderStepped:Connect(function()
     if aimbotAtivo and alvoSelecionado then
         mirarEm(alvoSelecionado)
     end
@@ -263,9 +583,8 @@ end)
 -- =========================
 -- Nova Aba: Análise
 -- =========================
-local analiseBtn = Instance.new("TextButton", frame)
-analiseBtn.Size = UDim2.new(0, 100, 0, 35)
-analiseBtn.Position = UDim2.new(0, 10, 0, 140)
+local analiseBtn = Instance.new("TextButton", tabsFrame)
+analiseBtn.Size = UDim2.new(1, 0, 0, 35)
 analiseBtn.Text = "Análise"
 analiseBtn.TextColor3 = Color3.new(1,1,1)
 analiseBtn.BackgroundTransparency = 1
@@ -278,6 +597,7 @@ local cameraOriginal = workspace.CurrentCamera
 local assistindo = nil
 
 analiseBtn.MouseButton1Click:Connect(function()
+    disableESP()
     for _, child in ipairs(content:GetChildren()) do
         if not child:IsA("UIListLayout") then child:Destroy() end
     end
@@ -339,9 +659,8 @@ end)
 -- =========================
 -- Nova Aba: Teleporte
 -- =========================
-local teleporteBtn = Instance.new("TextButton", frame)
-teleporteBtn.Size = UDim2.new(0, 100, 0, 35)
-teleporteBtn.Position = UDim2.new(0, 10, 0, 180)
+local teleporteBtn = Instance.new("TextButton", tabsFrame)
+teleporteBtn.Size = UDim2.new(1, 0, 0, 35)
 teleporteBtn.Text = "Teleporte"
 teleporteBtn.TextColor3 = Color3.new(1,1,1)
 teleporteBtn.BackgroundTransparency = 1
@@ -353,6 +672,7 @@ teleporteBtn.ZIndex = 2
 local jogadorSelecionado = nil
 
 teleporteBtn.MouseButton1Click:Connect(function()
+    disableESP()
     for _, child in ipairs(content:GetChildren()) do
         if not child:IsA("UIListLayout") then child:Destroy() end
     end
@@ -408,18 +728,18 @@ teleporteBtn.MouseButton1Click:Connect(function()
     end
 
     atualizarLista()
-    Players.PlayerAdded:Connect(atualizarLista)
-    Players.PlayerRemoving:Connect(atualizarLista)
+    playerAddedConn = Players.PlayerAdded:Connect(atualizarLista)
+    playerRemovingConn = Players.PlayerRemoving:Connect(atualizarLista)
 end)
 
--- Listener para tecla 1 (teleportar até jogador selecionado)
-UserInputService.InputBegan:Connect(function(input, processed)
+-- Listener para tecla 1 (teleportar até jogador selecionado com scroll)
+inputBeganConn3 = UserInputService.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.One then
-        if jogadorSelecionado and jogadorSelecionado.Character and jogadorSelecionado.Character:FindFirstChild("HumanoidRootPart") then
+        if jogadorSelecionadoTeleport and jogadorSelecionadoTeleport.Character and jogadorSelecionadoTeleport.Character:FindFirstChild("HumanoidRootPart") then
             local myChar = player.Character
             if myChar and myChar:FindFirstChild("HumanoidRootPart") then
-                myChar.HumanoidRootPart.CFrame = jogadorSelecionado.Character.HumanoidRootPart.CFrame + Vector3.new(2,0,0)
+                myChar.HumanoidRootPart.CFrame = jogadorSelecionadoTeleport.Character.HumanoidRootPart.CFrame + Vector3.new(2,0,0)
             end
         end
     end
@@ -458,3 +778,197 @@ local function makeDraggable(guiObject)
 end
 
 makeDraggable(frame)
+
+-- =========================
+-- Nova Aba: Show Races
+-- =========================
+local showRacesBtn = Instance.new("TextButton", tabsFrame)
+showRacesBtn.Size = UDim2.new(1, 0, 0, 35)
+showRacesBtn.Text = "Show Races"
+showRacesBtn.TextColor3 = Color3.new(1,1,1)
+showRacesBtn.BackgroundTransparency = 1
+showRacesBtn.Font = Enum.Font.GothamBold
+showRacesBtn.TextSize = 16
+showRacesBtn.AutoButtonColor = false
+showRacesBtn.ZIndex = 2
+
+showRacesBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    local verRacasBtn = Instance.new("TextButton", content)
+    verRacasBtn.Size = UDim2.new(0, 180, 0, 35)
+    verRacasBtn.Text = "Ver Raças"
+    verRacasBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    verRacasBtn.TextColor3 = Color3.new(1,1,1)
+    verRacasBtn.Font = Enum.Font.GothamBold
+    verRacasBtn.TextSize = 16
+    Instance.new("UICorner", verRacasBtn).CornerRadius = UDim.new(0,8)
+
+    verRacasBtn.MouseButton1Click:Connect(function()
+        local raceCustom = player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("RaceCustom")
+        raceCustom.Visible = true
+    end)
+end)
+
+-- =========================
+-- Aba: ver moveset
+-- =========================
+local verMovesetBtn = Instance.new("TextButton", tabsFrame)
+verMovesetBtn.Size = UDim2.new(1, 0, 0, 35)
+verMovesetBtn.Text = "ver moveset"
+verMovesetBtn.TextColor3 = Color3.new(1,1,1)
+verMovesetBtn.BackgroundTransparency = 1
+verMovesetBtn.Font = Enum.Font.GothamBold
+verMovesetBtn.TextSize = 14
+verMovesetBtn.AutoButtonColor = false
+verMovesetBtn.ZIndex = 2
+
+-- backup do meu moveset
+local meuMovesetBackup = nil
+
+verMovesetBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    -- limpar conteúdo
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    local title = Instance.new("TextLabel", content)
+    title.Size = UDim2.new(0, 260, 0, 28)
+    title.Text = "Ver/Transferir Moveset dos Players"
+    title.BackgroundTransparency = 1
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+
+    local info = Instance.new("TextLabel", content)
+    info.Size = UDim2.new(0, 260, 0, 18)
+    info.Position = UDim2.new(0, 0, 0, 30)
+    info.Text = "Clique para copiar o moveset do player selecionado para você. Role para navegar (loop)."
+    info.BackgroundTransparency = 1
+    info.TextColor3 = Color3.fromRGB(200,200,200)
+    info.Font = Enum.Font.Gotham
+    info.TextSize = 12
+
+    local list = Instance.new("Frame", content)
+    list.Size = UDim2.new(0, 260, 0, 180)
+    list.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    list.BackgroundTransparency = 0.1
+    Instance.new("UICorner", list).CornerRadius = UDim.new(0,8)
+
+    local scroll = Instance.new("ScrollingFrame", list)
+    scroll.Size = UDim2.new(1, -10, 1, -10)
+    scroll.Position = UDim2.new(0, 5, 0, 5)
+    scroll.CanvasSize = UDim2.new(0,0,0,0)
+    scroll.ScrollBarThickness = 6
+    scroll.BackgroundTransparency = 1
+
+    local listLayout = Instance.new("UIListLayout", scroll)
+    listLayout.Padding = UDim.new(0,4)
+    listLayout.SortOrder = Enum.SortOrder.Name
+
+    -- cria botões para cada player
+    local playersOrder = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        table.insert(playersOrder, plr)
+    end
+
+    local selectedIndex = 1
+    local function refreshList()
+        for _, child in ipairs(scroll:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        for i, plr in ipairs(playersOrder) do
+            local opt = Instance.new("TextButton", scroll)
+            opt.Size = UDim2.new(1, -8, 0, 28)
+            opt.Position = UDim2.new(0,4,0,0)
+            opt.Text = plr.Name
+            opt.Font = Enum.Font.Gotham
+            opt.TextSize = 14
+            opt.TextColor3 = Color3.new(1,1,1)
+            opt.BackgroundColor3 = (i == selectedIndex) and Color3.fromRGB(80,120,80) or Color3.fromRGB(45,45,45)
+            opt.AutoButtonColor = false
+            opt.ZIndex = 5
+
+            opt.MouseButton1Click:Connect(function()
+                local sel = plr
+                -- backup meu moveset (usa `statz` já carregado no topo)
+                local myStatz = statz or player:FindFirstChild("statz")
+                if myStatz then
+                    local ok, myMoves = pcall(function() return myStatz:FindFirstChild("movesetsaving") end)
+                    if ok and myMoves and myMoves:IsA("Instance") then
+                        meuMovesetBackup = myMoves:Clone()
+                        pcall(function() myMoves:Destroy() end)
+                    end
+                end
+                -- copiar moveset do selecionado para mim
+                if sel and sel:FindFirstChild("statz") then
+                    local ok, theirMoves = pcall(function() return sel.statz:FindFirstChild("movesetsaving") end)
+                    if ok and theirMoves and theirMoves:IsA("Instance") and myStatz then
+                        local suc, clone = pcall(function() return theirMoves:Clone() end)
+                        if suc and clone then
+                            pcall(function() clone.Parent = myStatz end)
+                        end
+                    end
+                end
+                -- respawn/regenerar
+                pcall(function()
+                    if player.Character and player.Character:FindFirstChild("Humanoid") then
+                        player.Character.Humanoid.Health = 0
+                    end
+                end)
+                -- limpar lista visual
+                for _, c in ipairs(content:GetChildren()) do if not c:IsA("UIListLayout") then c:Destroy() end end
+            end)
+        end
+        scroll.CanvasSize = UDim2.new(0,0,0,#playersOrder*32)
+    end
+
+    refreshList()
+
+    -- rolagem por mouse wheel com loop
+    if wheelConn then wheelConn:Disconnect() end
+    wheelConn = UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseWheel then
+            local delta = input.Position.Z
+            if delta > 0 then
+                selectedIndex = selectedIndex - 1
+            else
+                selectedIndex = selectedIndex + 1
+            end
+            if selectedIndex < 1 then selectedIndex = #playersOrder end
+            if selectedIndex > #playersOrder then selectedIndex = 1 end
+            refreshList()
+        end
+    end)
+
+    -- botão restaurar meu moveset
+    local restaurarBtn = Instance.new("TextButton", content)
+    restaurarBtn.Size = UDim2.new(0, 200, 0, 30)
+    restaurarBtn.Position = UDim2.new(0, 30, 0, 220)
+    restaurarBtn.Text = "Ver meus movesets"
+    restaurarBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    restaurarBtn.TextColor3 = Color3.new(1,1,1)
+    restaurarBtn.Font = Enum.Font.GothamBold
+    restaurarBtn.TextSize = 14
+    Instance.new("UICorner", restaurarBtn).CornerRadius = UDim.new(0,6)
+
+    restaurarBtn.MouseButton1Click:Connect(function()
+        if meuMovesetBackup and player:FindFirstChild("statz") then
+            local myStatz = player.statz
+            if myStatz:FindFirstChild("movesetsaving") then
+                myStatz.movesetsaving:Destroy()
+            end
+            meuMovesetBackup:Clone().Parent = myStatz
+            meuMovesetBackup = nil
+            -- respawn para aplicar
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.Health = 0
+            end
+        end
+    end)
+
+end)
