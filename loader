@@ -1,12 +1,974 @@
--- Compact loader for GitHub raw usage
--- Usage from executor: loadstring(game:HttpGet("RAW_URL"))()
-local payload_b64 = [===[
-ICNwbGF5ZXJzT3JkZXIgdGhlbiBzZWxlY3RlZEluZGV4ID0gMSBlbmQNCiAgICAgICAgICAgIHJlZnJlc2hUZWxlcG9ydERpc3BsYXkoKQ0KICAgICAgICBlbmQNCiAgICBlbmQpDQoNCiAgICAtLSB0ZWNsYSAzIHBhcmEgdGVsZXBvcnRhciBxdWFuZG8gYWJhIGF0aXZhDQogICAgdGVsZXBvcnRLZXlDb25uID0gVXNlcklucHV0U2VydmljZS5JbnB1dEJlZ2FuOkNvbm5lY3QoZnVuY3Rpb24oaW5wdXQsIHByb2Nlc3NlZCkNCiAgICAgICAgaWYgcHJvY2Vzc2VkIHRoZW4gcmV0dXJuIGVuZA0KICAgICAgICBpZiBub3QgdGVsZVRhYkFjdGl2ZSB0aGVuIHJldHVybiBlbmQNCiAgICAgICAgaWYgaW5wdXQuS2V5Q29kZSA9PSBFbnVtLktleUNvZGUuVGhyZWUgdGhlbg0KICAgICAgICAgICAgbG9jYWwgc2VsID0gcGxheWVyc09yZGVyW3NlbGVjdGVkSW5kZXhdDQogICAgICAgICAgICBpZiBzZWwgYW5kIHNlbC5DaGFyYWN0ZXIgYW5kIHNlbC5DaGFyYWN0ZXI6RmluZEZpcnN0Q2hpbGQoIkh1bWFub2lkUm9vdFBhcnQiKSBhbmQgcGxheWVyLkNoYXJhY3RlciBhbmQgcGxheWVyLkNoYXJhY3RlcjpGaW5kRmlyc3RDaGlsZCgiSHVtYW5vaWRSb290UGFydCIpIHRoZW4NCiAgICAgICAgICAgICAgICBwbGF5ZXIuQ2hhcmFjdGVyLkh1bWFub2lkUm9vdFBhcnQuQ0ZyYW1lID0gc2VsLkNoYXJhYWN0ZXIuSHVtYW5vaWRSb290UGFydC5DRnJhbWUgKyBWZWN0b3IzLm5ldygyLDAsMCkNCiAgICAgICAgZW5kDQogICAgICAgIGVuZA0KICAgIGVuZCkNCg0KICAgIC0tIGJvdMODwqNvIGRlIHRlbGVwb3J0IChvcGNpb25hbCkgbG9nbyBhYmFpeG8NCiAgICBsb2NhbCB0cEJ0biA9IEluc3RhbmNlLm5ldygiVGV4dEJ1dHRvbiIsIGNvbnRlbnQpDQogICAgdHBCdG4uU2l6ZSA9IFVEaW0yLm5ldygwLCAyMDAsIDAsIDMwKQ0KICAgIHRwQnRuLlBvc2l0aW9uID0gVURpbTIubmV3KDAsIDMwLCAwLCA3MikNCiAgICB0cEJ0bi5UZXh0ID0gIlRlbGVwb3J0YXIiDQogICAgdHBCdG4uQmFja2dyb3VuZENvbG9yMyA9IENvbG9yMy5mcm9tUkdCKDcwLDcwLDcwKQ0KICAgIHRwQnRuLlRleHRDb2xvcjMgPSBDb2xvcjMubmV3KDEsMSwxKQ0KICAgIHRwQnRuLkZvbnQgPSBFbnVtLkZvbnQuR290aGFtQm9sZA0KICAgIHRwQnRuLlRleHRTaXplID0gMTQNCiAgICBJbnN0YW5jZS5uZXcoIlVJQ29ybmVyIiwgdHBCdG4pLkNvcm5lclJhZGl1cyA9IFVEaW0ubmV3KDAsNikNCiAgICB0cEJ0bi5Nb3VzZUJ1dHRvbjFDbGljazpDb25uZWN0KGZ1bmN0aW9uKCkNCiAgICAgICAgbG9jYWwgc2VsID0gcGxheWVyc09yZGVyW3NlbGVjdGVkSW5kZXhdDQogICAgICAgIGlmIHNlbCBhbmQgc2VsLkNoYXJhY3RlciBhbmQgc2VsLkNoYXJhY3RlcjpGaW5kRmlyc3RDaGlsZCgiSHVtYW5vaWRSb290UGFydCIpIGFuZCBwbGF5ZXIuQ2hhcmFjdGVyIGFuZCBwbGF5ZXIuQ2hhcmFjdGVyOkZpbmRGaXJzdENoaWxkKCJIdW1hbm9pZFJvb3RQYXJ0IikgdGhlbg0KICAgICAgICAgICAgcGxheWVyLkNoYXJhY3Rlci5IdW1hbm9pZFJvb3RQYXJ0LkNGcmFtZSA9IHNlbC5DaGFyYWN0ZXIuSHVtYW5vaWRSb290UGFydC5DRnJhbWUgKyBWZWN0b3IzLm5ldygyLDAsMCkNCiAgICAgICAgZW5kDQogICAgZW5kKQ0KZW5kDQoNCnRlbGVwb3J0ZUJ0bi5Nb3VzZUJ1dHRvbjFDbGljazpDb25uZWN0KGZ1bmN0aW9uKCkNCiAgICBvcGVuVGVsZVRhYigpDQplbmQpDQoNCi0tIFJpZ2h0Q29udHJvbCBhYnJlIGEgYWJhIFRlbGVwb3J0ZSAoc2luZ2xlIHByZXNzKQ0KaW5wdXRCZWdhblJpZ2h0Q29ubiA9IFVzZXJJbnB1dFNlcnZpY2UuSW5wdXRCZWdhbjpDb25uZWN0KGZ1bmN0aW9uKGlucHV0LCBwcm9jZXNzZWQpDQogICAgaWYgcHJvY2Vzc2VkIHRoZW4gcmV0dXJuIGVuZA0KICAgIGlmIGlucHV0LktleUNvZGUgPT0gRW51bS5LZXlDb2RlLlJpZ2h0Q29udHJvbCB0aGVuDQogICAgICAgIHBjYWxsKG9wZW5UZWxlVGFiKQ0KICAgIGVuZA0KZW5kKQ0KDQotLSBMaXN0ZW5lciBwYXJhIHRlY2xhIDEgKHRlbGVwb3J0YXIgYXTDg8KpIGpvZ2Fkb3Igc2VsZWNpb25hZG8gY29tIHNjcm9sbCkNCmlucHV0QmVnYW5Db25uMyA9IFVzZXJJbnB1dFNlcnZpY2UuSW5wdXRCZWdhbjpDb25uZWN0KGZ1bmN0aW9uKGlucHV0LCBwcm9jZXNzZWQpDQogICAgaWYgcHJvY2Vzc2VkIHRoZW4gcmV0dXJuIGVuZA0KICAgIGlmIGlucHV0LktleUNvZGUgPT0gRW51bS5LZXlDb2RlLk9uZSB0aGVuDQogICAgICAgIGlmIGpvZ2Fkb3JTZWxlY3lvbmFkb1RlbGVwb3J0IGFuZCBqb2dhZG9yU2VsZWNpb25hZG9UZWxlcG9ydC5DaGFyYWN0ZXIgYW5kIGpvZ2Fkb3JTZWxlY3lvbmFkb1RlbGVwb3J0LkNoYXJhY3RlcjpGaW5kRmlyc3RDaGlsZCgiSHVtYW5vaWRSb290UGFydCIpIHRoZW4NCiAgICAgICAgICAgIGxvY2FsIG15Q2hhciA9IHBsYXllci5DaGFyYWN0ZXINCiAgICAgICAgICAgIGlmIG15Q2hhciBhbmQgbXlDaGFyOkZpbmRGaXJzdENoaWxkKCJIdW1hbm9pZFJvb3RQYXJ0IikgdGhlbg0KICAgICAgICAgICAgICAgIG15Q2hhci5IdW1hbm9pZFJvb3RQYXJ0LkNGcmFtZSA9IGpvZ2Fkb3JTZWxlY3lvbmFkb1RlbGVwb3J0LkNoYXJhY3Rlci5IdW1hbm9pZFJvb3RQYXJ0LkNGcmFtZSArIFZlY3RvcjMubmV3KDIsMCwwKQ0KICAgICAgICAgICAgZW5kDQogICAgICAgIGVuZA0KICAgIGVuZCkNCg0KICAgIC0tIGJvdMODwqNvIHJlc3RhdXJhciBtZXUgbW92ZXNldA0KICAgIGxvY2FsIG1ldU1vdmVzZXRCYWNrdXAgPSBudWwNCg0KDQp2ZXJNb3Zlc2V0QnRuLk1vdXNlQnV0dG9uMUNsaWNrOkNvbm5lY3QoZnVuY3Rpb24oKQ0KICAgIGNsb3NlVGVsZVRhYigpDQogICAgZGlzYWJsZUVTUCgpDQogICAgLS0gbGltcGFyIGNvbnRlw4PCumRvDQogICAgZm9yIF8sIGNoaWxkIGluIGlwYWlycyhjb250ZW50OkdldENoaWxkcmVuKCkpIGRvDQogICAgICAgIGlmIG5vdCBjaGlsZDpJc0EoIlVJTGlzdExheW91dCIpIHRoZW4gY2hpbGQ6RGVzdHJveSgpIGVuZA0KICAgIGVuZA0KDQogICAgbG9jYWwgdGl0bGUgPSBJbnN0YW5jZS5uZXcoIlRleHRMYWJlbCIsIGNvbnRlbnQpDQogICAgdGl0bGUuU2l6ZSA9IFVEaW0yLm5ldygwLCAyNjAsIDAsIDI4KQ0KICAgIHRpdGxlLlRleHQgPSAiVmVyL1RyYW5zZmVyaXIgTW92ZXNldCBkb3MgUGxheWVycyINCiAgICB0aXRsZS5CYWNrZ3JvdW5kVHJhbnNwYXJlbmN5ID0gMQ0KICAgIHRpdGxlLlRleHRDb2xvcjMgPSBDb2xvcjMubmV3KDEsMSwxKQ0KICAgIHRpdGxlLkZvbnQgPSBFbnVtLkZvbnQuR290aGFtQm9sZA0KICAgIHRpdGxlLlRleHRTaXplID0gMTYNCg0KICAgIGxvY2FsIGluZm8gPSBJbnN0YW5jZS5uZXcoIlRleHRMYWJlbCIsIGNvbnRlbnQpDQogICAgaW5mby5TaXplID0gVURpbTIubmV3KDAsIDI2MCwgMCwgMTgpDQogICAgaW5mby5Qb3NpdGlvbiA9IFVEaW0yLm5ldygwLCAwLCAwLCAzMCkNCiAgICBpbmZvLlRleHQgPSAiQ2xpcXVlIHBhcmEgY29waWFyIG8gbW92ZXNldCBkbyBwbGF5ZXIgc2VsZWNpb25hZG8gcGFyYSB2b2PDg8KqLiBSb2xlIHBhcmEgbmF2ZWdhciAobG9vcCkuIg0KICAgIGluZm8uQmFja2dyb3VuZFRyYW5zcGFyZW5jeSA9IDENCiAgICBpbmZvLlRleHRDb2xvcjMgPSBDb2xvcjMuZnJvbVJHQigyMDAsMjAwLDIwMCkNCiAgICBpbmZvLkZvbnQgPSBFbnVtLkZvbnQuR290aGFtDQogICAgaW5mby5UZXh0U2l6ZSA9IDEyDQoNCiAgICBsb2NhbCBsaXN0ID0gSW5zdGFuY2UubmV3KCJGcmFtZSIsIGNvbnRlbnQpDQogICAgLS0gYWp1c3RhciBwYXJhIGNhYmVyIGV4YXRhbWVudGUgYSBjYWl4YSBkbyBqb2dhZG9yIChtYWlzIGNvbXBhY3RvKQ0KICAgIGxpc3QuU2l6ZSA9IFVEaW0yLm5ldygwLCAyNjAsIDAsIDU2KQ0KICAgIGxpc3QuQmFja2dyb3VuZENvbG9yMyA9IENvbG9yMy5mcm9tUkdCKDMwLDMwLDMwKQ0KICAgIGxpc3QuQmFja2dyb3VuZFRyYW5zcGFyZW5jeSA9IDANCiAgICBJbnN0YW5jZS5uZXcoIlVJQ29ybmVyIiwgbGlzdCkuQ29ybmVyUmFkaXVzID0gVURpbS5uZXcoMCw4KQ0KICAgIGxvY2FsIHN0cm9rZSA9IEluc3RhbmNlLm5ldygiVUlTdHJva2UiLCBsaXN0KQ0KICAgIHN0cm9rZS5Db2xvciA9IENvbG9yMy5mcm9tUkdCKDYwLDYwLDYwKQ0KICAgIHN0cm9rZS5UaGlja25lc3MgPSAxDQogICAgc3Ryb2tlLlRyYW5zcGFyZW5jeSA9IDAuMw0KICAgIGxvY2FsIGdyYWQgPSBJbnN0YW5jZS5uZXcoIlVJR3JhZGllbnQiLCBsaXN0KQ0KICAgIGdyYWQuQ29sb3IgPSBDb2xvclNlcXVlbmNlLm5ld3tDb2xvclNlcXVlbmNlS2V5cG9pbnQubmV3KDAsIENvbG9yMy5mcm9tUkdCKDQwLDQwLDQwKSksIENvbG9yU2VxdWVuY2VLZXlwb2ludC5uZXcoMSwgQ29sb3IzLmZyb21SR0IoMjgsMjgsMjgpKX0NCiAgICBncmFkLlJvdGF0aW9uID0gOTANCiAgICAtLSDDg8KhcmVhIGNvbXBhY3RhIHBhcmEgbW9zdHJhciBzb21lbnRlIHVtIGpvZ2Fkb3IgcG9yIHZleg0KDQogICAgLS0gbW9zdHJhIHVtIMODwrpuaWNvIGpvZ2Fkb3IgcG9yIHZleiBlIHVzYSBvIHNjcm9sbCBwYXJhIHRyb2NhciBkZSBqb2dhZG9yDQogICAgbG9jYWwgcGxheWVyc09yZGVyID0ge30NCiAgICBmb3IgXywgcGxyIGluIGlwYWlycyhQbGF5ZXJzOkdldFBsYXllcnMoKSkgZG8NCiAgICAgICAgdGFibGUuaW5zZXJ0KHBsYXllcnNPcmRlciwgcGxyKQ0KICAgIGVuZA0KDQogICAgbG9jYWwgc2VsZWN0ZWRJbmRleCA9IDENCg0KICAgIGxvY2FsIHBsYXllckRpc3BsYXkgPSBJbnN0YW5jZS5uZXcoIlRleHRCdXR0b24iLCBsaXN0KQ0KICAgIHBsYXllckRpc3BsYXkuU2l6ZSA9IFVEaW0yLm5ldygxLCAtMTYsIDAsIDQwKQ0KICAgIHBsYXllckRpc3BsYXkuUG9zaXRpb24gPSBVRGltMi5uZXcoMCwgOCwgMCwgOCkNCiAgICBwbGF5ZXJEaXNwbGF5LkZvbnQgPSBFbnVtLkZvbnQuR290aGFtDQogICAgcGxheWVyRGlzcGxheS5UZXh0U2l6ZSA9IDE2DQogICAgcGxheWVyRGlzcGxheS5UZXh0Q29sb3IzID0gQ29sb3IzLm5ldygxLDEsMSkNCiAgICBwbGF5ZXJEaXNwbGF5LkJhY2tncm91bmRDb2xvcjMgPSBDb2xvcjMuZnJvbVJHQig0NSw0NSw0NSkNCiAgICBwbGF5ZXJEaXNwbGF5LkF1dG9CdXR0b25Db2xvciA9IGZhbHNlDQogICAgcGxheWVyRGlzcGxheS5aSW5kZXggPSA1DQogICAgSW5zdGFuY2UubmV3KCJVSUNvcm5lciIsIHBsYXllckRpc3BsYXkpLkNvcm5lclJhZGl1cyA9IFVEaW0ubmV3KDAsNikNCiAgICBsb2NhbCBwZFN0cm9rZSA9IEluc3RhbmNlLm5ldygiVUlTdHJva2UiLCBwbGF5ZXJEaXNwbGF5KQ0KICAgIHBkU3Ryb2tlLkNvbG9yID0gQ29sb3IzLmZyb21SR0IoMjAsMjAsMjApDQogICAgcGRTdHJva2UuVGhpY2tuZXNzID0gMQ0KICAgIHBkU3Ryb2tlLlRyYW5zcGFyZW5jeSA9IDAuNA0KDQogICAgbG9jYWwgZnVuY3Rpb24gcmVmcmVzaExpc3QoKQ0KICAgICAgICBpZiAjcGxheWVyc09yZGVyID09IDAgdGhlbg0KICAgICAgICAgICAgcGxheWVyRGlzcGxheS5UZXh0ID0gIk5lbmh1bSBqb2dhZG9yIg0KICAgICAgICAgICAgcmV0dXJuDQogICAgICAgIGVuZA0KICAgICAgICBpZiBzZWxlY3RlZEluZGV4IDwgMSB0aGVuIHNlbGVjdGVkSW5kZXggPSAxIGVuZA0KICAgICAgICBpZiBzZWxlY3RlZEluZGV4ID4gI3BsYXllcnNPcmRlciB0aGVuIHNlbGVjdGVkSW5kZXggPSAjcGxheWVyc09yZGVyIGVuZA0KICAgICAgICBwbGF5ZXJEaXNwbGF5LlRleHQgPSBwbGF5ZXJzT3JkZXJbc2VsZWN0ZWRJbmRleF0uTmFtZQ0KICAgIGVuZA0KDQogICAgcGxheWVyRGlzcGxheS5Nb3VzZUJ1dHRvbjFDbGljazpDb25uZWN0KGZ1bmN0aW9uKCkNCiAgICAgICAgbG9jYWwgc2VsID0gcGxheWVyc09yZGVyW3NlbGVjdGVkSW5kZXhdDQogICAgICAgIC0tIGJhY2t1cCBtZXUgbW92ZXNldCAodXNhIGBzdGF0emAgasODwqEgY2FycmVnYWRvIG5vIHRvcG8pDQogICAgICAgIGxvY2FsIG15U3RhdHogPSBzdGF0eiBvciBwbGF5ZXI6RmluZEZpcnN0Q2hpbGQoInN0YXR6IikNCiAgICAgICAgaWYgbXlTdGF0eiB0aGVuDQogICAgICAgICAgICBsb2NhbCBvaywgbXlNb3ZlcyA9IHBjYWxsKGZ1bmN0aW9uKCkgcmV0dXJuIG15U3RhdHo6RmluZEZpcnN0Q2hpbGQoIm1vdmVzZXRzYXZpbmciKSBlbmQpDQogICAgICAgICAgICBpZiBvayBhbmQgbXlNb3ZlcyBhbmQgbXlNb3ZlczpJc0EoIkluc3RhbmNlIikgdGhlbg0KICAgICAgICAgICAgICAgIG1ldU1vdmVzZXRCYWNrdXAgPSBteU1vdmVzOkNsb25lKCkNCiAgICAgICAgICAgICAgICBwY2FsbChmdW5jdGlvbigpIG15TW92ZXM6RGVzdHJveSgpIGVuZCkNCiAgICAgICAgICAgIGVuZA0KICAgICAgICBlbmQNCiAgICAgICAgLS0gcmVzcGF3bi9yZWdlbmVyYQ0KICAgICAgICBwY2FsbChmdW5jdGlvbigpDQogICAgICAgICAgICBpZiBwbGF5ZXIuQ2hhcmFjdGVyIGFuZCBwbGF5ZXIuQ2hhcmFjdGVyOkZpbmRGaXJzdENoaWxkKCJIdW1hbm9pZCIpIHRoZW4NCiAgICAgICAgICAgICAgICBwbGF5ZXIuQ2hhcmFjdGVyLkh1bWFub2QuSGVhbHRoID0gMA0KICAgICAgICAgICAgZW5kDQogICAgICAgIGVuZA0KICAgIGVuZCkNCg0KZW5kKQ0K
-]===]
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local statz = player:WaitForChild("statz")
+local TeleportService = game:GetService("TeleportService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
-local http = game:GetService("HttpService")
-local ok, code = pcall(http.Base64Decode, http, payload_b64)
-if not ok then error("Base64 decode failed") end
-local fn, err = loadstring(code)
-if not fn then error(err) end
-fn()
+-- ESP globals (declarados cedo para serem acessíveis pelo InputBegan)
+local espAtivo = false
+local espBillboards = {}
+local espUpdateConn
+local espPlayerAddedConn, espPlayerRemovingConn
+
+-- Variáveis para seleção de jogador com scroll
+local jogadorSelecionadoTeleport = nil
+local jogadoresLista = {}
+local indiceSelecionado = 1
+local listaAtiva = false
+local wheelConn
+local lastCtrlTime = 0
+local ctrlCount = 0
+local inputBeganESPConn = nil
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "SatoriHubHUD"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+
+gui.DisplayOrder = 999
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 0, 0, 0)
+frame.Position = UDim2.new(0.5, -200, 0.5, -140)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BackgroundTransparency = 0.2
+frame.Visible = true
+frame.ZIndex = 1
+frame.Active = true
+frame.Selectable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,15)
+
+frame:TweenSize(UDim2.new(0, 400, 0, 280), "Out", "Quad", 0.4, true)
+
+-- Label de ping no topo da tela
+local pingLabelTopo = Instance.new("TextLabel", gui)
+pingLabelTopo.Size = UDim2.new(0, 150, 0, 30)
+-- mover para canto inferior direito um pouco acima
+pingLabelTopo.Position = UDim2.new(1, -180, 1, -60)
+pingLabelTopo.BackgroundColor3 = Color3.fromRGB(20,20,20)
+pingLabelTopo.BackgroundTransparency = 0.2
+pingLabelTopo.TextColor3 = Color3.new(1,1,1)
+pingLabelTopo.Font = Enum.Font.GothamBold
+pingLabelTopo.TextSize = 16
+pingLabelTopo.TextXAlignment = Enum.TextXAlignment.Center
+pingLabelTopo.ZIndex = 100
+Instance.new("UICorner", pingLabelTopo).CornerRadius = UDim.new(0,10)
+
+-- Indicador simples de ESP
+
+
+-- Loop para atualizar ping no topo
+game:GetService("RunService").Heartbeat:Connect(function()
+    local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+    pingLabelTopo.Text = "Ping: " .. math.floor(ping) .. "ms"
+end)
+
+-- GUI para lista de jogadores
+local listaGui = Instance.new("Frame", gui)
+listaGui.Size = UDim2.new(0, 250, 0, 80)
+listaGui.Position = UDim2.new(0.5, -125, 0, 50)
+listaGui.BackgroundColor3 = Color3.fromRGB(15,15,15)
+listaGui.BackgroundTransparency = 0.1
+listaGui.Visible = false
+listaGui.ZIndex = 10
+Instance.new("UICorner", listaGui).CornerRadius = UDim.new(0,15)
+
+local tituloLista = Instance.new("TextLabel", listaGui)
+tituloLista.Size = UDim2.new(1, 0, 0, 25)
+tituloLista.Position = UDim2.new(0, 0, 0, 5)
+tituloLista.Text = "Selecionar Jogador para Teleport"
+tituloLista.TextColor3 = Color3.new(1,1,1)
+tituloLista.BackgroundTransparency = 1
+tituloLista.Font = Enum.Font.GothamBold
+tituloLista.TextSize = 14
+tituloLista.TextXAlignment = Enum.TextXAlignment.Center
+tituloLista.ZIndex = 11
+
+local listaLabel = Instance.new("TextLabel", listaGui)
+listaLabel.Size = UDim2.new(1, 0, 0, 30)
+listaLabel.Position = UDim2.new(0, 0, 0, 35)
+listaLabel.Text = "..."
+listaLabel.TextColor3 = Color3.new(1,1,1)
+listaLabel.BackgroundTransparency = 1
+listaLabel.Font = Enum.Font.GothamBold
+listaLabel.TextSize = 18
+listaLabel.TextXAlignment = Enum.TextXAlignment.Center
+listaLabel.ZIndex = 11
+
+local header = Instance.new("TextLabel", frame)
+header.Size = UDim2.new(1, -60, 0, 30)
+header.Position = UDim2.new(0, 10, 0, 5)
+header.Text = "Satori Hub"
+header.TextColor3 = Color3.new(1,1,1)
+header.BackgroundTransparency = 1
+header.Font = Enum.Font.GothamBold
+header.TextSize = 24
+header.TextXAlignment = Enum.TextXAlignment.Left
+header.ZIndex = 2
+
+local subHeader = Instance.new("TextLabel", frame)
+subHeader.Size = UDim2.new(1, -60, 0, 20)
+subHeader.Position = UDim2.new(0, 10, 0, 35)
+subHeader.Text = "by kylekamui"
+subHeader.TextColor3 = Color3.fromRGB(180,180,180)
+subHeader.BackgroundTransparency = 1
+subHeader.Font = Enum.Font.Gotham
+subHeader.TextSize = 16
+subHeader.TextXAlignment = Enum.TextXAlignment.Left
+subHeader.ZIndex = 2
+
+local minimizarBtn = Instance.new("TextButton", frame)
+minimizarBtn.Size = UDim2.new(0, 25, 0, 25)
+minimizarBtn.Position = UDim2.new(1, -55, 0, 5)
+minimizarBtn.Text = "-"
+minimizarBtn.TextColor3 = Color3.fromRGB(200,200,200)
+minimizarBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+minimizarBtn.BackgroundTransparency = 0.3
+minimizarBtn.Font = Enum.Font.GothamBold
+minimizarBtn.TextSize = 20
+minimizarBtn.ZIndex = 3
+Instance.new("UICorner", minimizarBtn).CornerRadius = UDim.new(0,6)
+
+minimizarBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+end)
+
+local fecharBtn = Instance.new("TextButton", frame)
+fecharBtn.Size = UDim2.new(0, 25, 0, 25)
+fecharBtn.Position = UDim2.new(1, -30, 0, 5)
+fecharBtn.Text = "X"
+fecharBtn.TextColor3 = Color3.fromRGB(200,200,200)
+fecharBtn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+fecharBtn.BackgroundTransparency = 0.3
+fecharBtn.Font = Enum.Font.GothamBold
+fecharBtn.TextSize = 20
+fecharBtn.ZIndex = 3
+Instance.new("UICorner", fecharBtn).CornerRadius = UDim.new(0,6)
+
+fecharBtn.MouseButton1Click:Connect(function()
+    -- Encerrar todas as tarefas
+    aimbotAtivo = false
+    alvoSelecionado = nil
+    if assistindo then
+        assistindo = nil
+        workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
+    end
+    jogadorSelecionado = nil
+    jogadorSelecionadoTeleport = nil
+    -- Desconectar conexões
+    if renderSteppedConn then renderSteppedConn:Disconnect() end
+    if inputBeganConn1 then inputBeganConn1:Disconnect() end
+    if inputBeganConn2 then inputBeganConn2:Disconnect() end
+    if inputBeganConn3 then inputBeganConn3:Disconnect() end
+    if inputBeganESPConn then inputBeganESPConn:Disconnect() end
+    if playerAddedConn then playerAddedConn:Disconnect() end
+    if playerRemovingConn then playerRemovingConn:Disconnect() end
+    if wheelConn then wheelConn:Disconnect() end
+    -- Destruir GUI
+    -- Desativar ESP e desconectar conexões relacionadas
+    if disableESP then pcall(disableESP) end
+    if espUpdateConn then espUpdateConn:Disconnect() end
+    if espPlayerAddedConn then espPlayerAddedConn:Disconnect() end
+    if espPlayerRemovingConn then espPlayerRemovingConn:Disconnect() end
+    gui:Destroy()
+end)
+
+-- Função para atualizar lista de jogadores
+local function atualizarListaJogadores()
+    jogadoresLista = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            table.insert(jogadoresLista, plr)
+        end
+    end
+    if #jogadoresLista > 0 then
+        indiceSelecionado = math.min(indiceSelecionado, #jogadoresLista)
+        jogadorSelecionadoTeleport = jogadoresLista[indiceSelecionado]
+    else
+        jogadorSelecionadoTeleport = nil
+    end
+end
+
+-- Função para atualizar o texto da lista
+local function atualizarTexto()
+    if #jogadoresLista > 0 and indiceSelecionado <= #jogadoresLista then
+        listaLabel.Text = jogadoresLista[indiceSelecionado].Name
+        jogadorSelecionadoTeleport = jogadoresLista[indiceSelecionado]
+    else
+        listaLabel.Text = "..."
+        jogadorSelecionadoTeleport = nil
+    end
+end
+
+-- Função para mostrar lista
+local function mostrarLista()
+    atualizarListaJogadores()
+    listaLabel.Text = "..."
+    indiceSelecionado = 1
+    atualizarTexto()
+    listaGui.Visible = true
+    -- Conectar wheel
+    wheelConn = UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseWheel then
+            if input.Position.Z > 0 then
+                indiceSelecionado = math.max(1, indiceSelecionado - 1)
+            else
+                indiceSelecionado = math.min(#jogadoresLista, indiceSelecionado + 1)
+            end
+            atualizarTexto()
+        end
+    end)
+end
+
+-- Listeners para input
+inputBeganConn1 = UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.UserInputType == Enum.UserInputType.MouseButton3 then
+        if listaAtiva then
+            listaGui.Visible = false
+            if wheelConn then wheelConn:Disconnect() end
+            listaAtiva = false
+        else
+            mostrarLista()
+            listaAtiva = true
+        end
+    elseif input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.RightControl then
+        local currentTime = tick()
+        if currentTime - lastCtrlTime < 0.5 then
+            ctrlCount = ctrlCount + 1
+            if ctrlCount >= 2 then
+                frame.Visible = not frame.Visible
+                if frame.Visible then
+                    frame.Size = UDim2.new(0, 0, 0, 0)
+                    frame:TweenSize(UDim2.new(0, 400, 0, 280), "Out", "Quad", 0.3, true)
+                end
+                ctrlCount = 0
+            end
+        else
+            ctrlCount = 1
+        end
+        lastCtrlTime = currentTime
+    
+    end
+end)
+
+-- Área de conteúdo
+-- Área de conteúdo agora é um ScrollingFrame para ficar mais dinâmica
+local content = Instance.new("ScrollingFrame", frame)
+content.Size = UDim2.new(1, -120, 1, -60)
+content.Position = UDim2.new(0, 120, 0, 60)
+content.BackgroundTransparency = 1
+content.ZIndex = 2
+content.CanvasSize = UDim2.new(0,0,0,0)
+content.ScrollBarThickness = 8
+
+local layout = Instance.new("UIListLayout", content)
+layout.Padding = UDim.new(0,12)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.VerticalAlignment = Enum.VerticalAlignment.Top
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Atualiza CanvasSize do content automaticamente
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    content.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 20)
+end)
+
+-- Área de abas (esquerda) como ScrollingFrame para evitar overflow
+local tabsFrame = Instance.new("ScrollingFrame", frame)
+tabsFrame.Name = "TabsFrame"
+tabsFrame.Size = UDim2.new(0, 100, 1, -120)
+tabsFrame.Position = UDim2.new(0, 10, 0, 60)
+tabsFrame.BackgroundTransparency = 1
+tabsFrame.ScrollBarThickness = 6
+tabsFrame.ZIndex = 2
+
+local tabsLayout = Instance.new("UIListLayout", tabsFrame)
+tabsLayout.Padding = UDim.new(0,8)
+tabsLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+tabsLayout.SortOrder = Enum.SortOrder.LayoutOrder
+tabsLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    tabsFrame.CanvasSize = UDim2.new(0, 0, 0, tabsLayout.AbsoluteContentSize.Y + 12)
+end)
+
+-- =========================
+-- ESP Básico (BillboardGui sobre o humanoid)
+-- Toggle com Tab, atualiza vida em formato 'k' quando aplicável
+-- =========================
+-- (variáveis RunService/esp já foram declaradas acima)
+
+local function formatHP(hp)
+    hp = math.max(0, math.floor(hp or 0))
+    if hp >= 1000 then
+        local v = math.floor(hp/1000)
+        return tostring(v) .. "k"
+    else
+        return tostring(hp)
+    end
+end
+
+local function criarESPParaJogador(plr)
+    if espBillboards[plr] then return end
+    if not plr or not plr.Character then return end
+    local char = plr.Character
+    local adornee = char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+    if not adornee then return end
+
+    local b = Instance.new("BillboardGui")
+    b.Name = "SatoriESP"
+    b.Adornee = adornee
+    b.Size = UDim2.new(0, 140, 0, 36)
+    b.AlwaysOnTop = true
+    b.MaxDistance = 1e6
+    b.StudsOffset = Vector3.new(0, 3, 0)
+    b.Parent = gui
+
+    local lbl = Instance.new("TextLabel", b)
+    lbl.Size = UDim2.new(1,0,1,0)
+    lbl.BackgroundTransparency = 1
+    lbl.TextColor3 = Color3.new(1,1,1)
+    lbl.Font = Enum.Font.GothamBold
+    lbl.TextSize = 14
+    lbl.TextStrokeTransparency = 0.6
+    lbl.TextYAlignment = Enum.TextYAlignment.Center
+    lbl.TextXAlignment = Enum.TextXAlignment.Center
+
+    espBillboards[plr] = {gui = b, label = lbl}
+end
+
+local function removerESPParaJogador(plr)
+    local data = espBillboards[plr]
+    if data and data.gui then
+        data.gui:Destroy()
+    end
+    espBillboards[plr] = nil
+end
+
+local function atualizarTodosESP()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            if espAtivo and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                criarESPParaJogador(plr)
+                local data = espBillboards[plr]
+                if data and data.label then
+                    local hp = plr.Character.Humanoid.Health or 0
+                    data.label.Text = plr.Name .. "\nHP: " .. formatHP(hp)
+                end
+            else
+                removerESPParaJogador(plr)
+            end
+        end
+    end
+end
+
+local function disableESP()
+    espAtivo = false
+    for plr,_ in pairs(espBillboards) do
+        removerESPParaJogador(plr)
+    end
+end
+
+local function enableESP()
+    espAtivo = true
+    atualizarTodosESP()
+end
+
+-- atualiza periodicamente a vida
+do
+    local acc = 0
+    espUpdateConn = RunService.Heartbeat:Connect(function(dt)
+        if not espAtivo then return end
+        acc = acc + dt
+        if acc >= 0.25 then
+            atualizarTodosESP()
+            acc = 0
+        end
+    end)
+end
+
+espPlayerAddedConn = Players.PlayerAdded:Connect(function(plr)
+    if espAtivo then criarESPParaJogador(plr) end
+end)
+espPlayerRemovingConn = Players.PlayerRemoving:Connect(function(plr)
+    removerESPParaJogador(plr)
+end)
+
+-- Listener separado para Tab (garante que funções ESP já existam)
+inputBeganESPConn = UserInputService.InputBegan:Connect(function(input, processed)
+    -- Allow Tab to toggle even if 'processed' (e.g. scoreboard), so only skip for other keys
+    if input.KeyCode ~= Enum.KeyCode.Tab and processed then return end
+    if input.KeyCode == Enum.KeyCode.Tab then
+        if espAtivo then
+            disableESP()
+        else
+            enableESP()
+        end
+    end
+end)
+
+-- Função para criar botão com descrição
+local function criarBotaoComDescricao(titulo, descricao)
+    local holder = Instance.new("Frame")
+    holder.Size = UDim2.new(0.9, 0, 0, 60)
+    holder.BackgroundTransparency = 1
+    holder.ZIndex = 2
+
+    local btn = Instance.new("TextButton", holder)
+    btn.Size = UDim2.new(1, 0, 0, 35)
+    btn.Text = titulo
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.BackgroundTransparency = 0.2
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 18
+    btn.AutoButtonColor = false
+    btn.ZIndex = 3
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+
+    local desc = Instance.new("TextLabel", holder)
+    desc.Size = UDim2.new(1, 0, 0, 20)
+    desc.Position = UDim2.new(0, 0, 0, 40)
+    desc.Text = descricao
+    desc.TextColor3 = Color3.fromRGB(180,180,180)
+    desc.BackgroundTransparency = 1
+    desc.Font = Enum.Font.SourceSans
+    desc.TextSize = 14
+    desc.TextWrapped = true
+    desc.ZIndex = 3
+
+    return holder, btn
+end
+
+-- Botão SLOT
+local slotBtn = Instance.new("TextButton", tabsFrame)
+slotBtn.Size = UDim2.new(1, 0, 0, 35)
+slotBtn.Text = "SLOT"
+slotBtn.TextColor3 = Color3.new(1,1,1)
+slotBtn.BackgroundTransparency = 1
+slotBtn.Font = Enum.Font.GothamBold
+slotBtn.TextSize = 16
+slotBtn.AutoButtonColor = false
+slotBtn.ZIndex = 2
+
+slotBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    local salvarHolder, salvarBtn = criarBotaoComDescricao("Salvar","BL atualmente visíveis vão ser equipadas depois...")
+    salvarHolder.Parent = content
+
+    local equiparHolder, equiparBtn = criarBotaoComDescricao("Equipar por cima","BL salvas anteriormente agora poderão ser equipadas.")
+    equiparHolder.Parent = content
+    equiparHolder.Visible = false
+
+    local prontoHolder, prontoBtn = criarBotaoComDescricao("EU EQUIPEI TUDO QUE EU QUERIA","não se preocupe que está invisível, isso apenas funciona.")
+    prontoHolder.Parent = content
+    prontoHolder.Visible = false
+
+    local backupStats = nil
+    salvarBtn.MouseButton1Click:Connect(function()
+        backupStats = statz:Clone()
+        salvarHolder.Visible = false
+        equiparHolder.Visible = true
+    end)
+    equiparBtn.MouseButton1Click:Connect(function()
+        if backupStats then
+            for _, child in pairs(statz:GetChildren()) do child:Destroy() end
+            for _, child in pairs(backupStats:GetChildren()) do child:Clone().Parent = statz end
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.Health = 0
+            end
+        end
+        equiparHolder.Visible = false
+        prontoHolder.Visible = true
+    end)
+    prontoBtn.MouseButton1Click:Connect(function()
+        local currentJobId = game.JobId
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, currentJobId, player)
+    end)
+end)
+-- Botão PVP
+local pvpBtn = Instance.new("TextButton", tabsFrame)
+pvpBtn.Size = UDim2.new(1, 0, 0, 35)
+pvpBtn.Text = "PVP"
+pvpBtn.TextColor3 = Color3.new(1,1,1)
+pvpBtn.BackgroundTransparency = 1
+pvpBtn.Font = Enum.Font.GothamBold
+pvpBtn.TextSize = 16
+pvpBtn.AutoButtonColor = false
+pvpBtn.ZIndex = 2
+
+-- Função para mirar (ajusta personagem e câmera)
+local function mirarEm(targetPlayer)
+    local char = player.Character
+    local targetChar = targetPlayer.Character
+    if char and targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local targetPos = targetChar.HumanoidRootPart.Position
+        local cam = workspace.CurrentCamera
+        if hrp and cam then
+            hrp.CFrame = CFrame.new(hrp.Position, targetPos)
+            cam.CFrame = CFrame.new(cam.CFrame.Position, targetPos)
+        end
+    end
+end
+
+-- Função para achar alvo mais próximo da mira (meio da tela)
+local function getAlvoNaDirecao()
+    local cam = workspace.CurrentCamera
+    if not cam then return nil end
+
+    local melhorAlvo, melhorAngulo = nil, math.huge
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPos = plr.Character.HumanoidRootPart.Position
+            local dirToTarget = (targetPos - cam.CFrame.Position).Unit
+            local camLook = cam.CFrame.LookVector
+            local angulo = math.acos(math.clamp(camLook:Dot(dirToTarget), -1, 1))
+            if angulo < melhorAngulo then
+                melhorAngulo = angulo
+                melhorAlvo = plr
+            end
+        end
+    end
+    return melhorAlvo
+end
+
+-- Variáveis
+local alvoSelecionado = nil
+local aimbotAtivo = false
+
+-- Aba PVP
+pvpBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    local info = Instance.new("TextLabel", content)
+    info.Size = UDim2.new(0, 180, 0, 30)
+    info.Text = "Pressione tecla 2 para travar/destravar"
+    info.TextColor3 = Color3.new(1,1,1)
+    info.BackgroundTransparency = 1
+    info.Font = Enum.Font.Gotham
+    info.TextSize = 14
+end)
+
+-- Listener para ativar/desativar aimbot com tecla 2
+inputBeganConn2 = UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.Two then
+        if not aimbotAtivo then
+            alvoSelecionado = getAlvoNaDirecao()
+            if alvoSelecionado then
+                aimbotAtivo = true
+            end
+        else
+            aimbotAtivo = false
+            alvoSelecionado = nil
+        end
+    end
+end)
+
+-- Loop para manter mira sempre no mesmo alvo
+renderSteppedConn = game:GetService("RunService").RenderStepped:Connect(function()
+    if aimbotAtivo and alvoSelecionado then
+        mirarEm(alvoSelecionado)
+    end
+end)
+
+-- =========================
+-- Nova Aba: Análise
+-- =========================
+local analiseBtn = Instance.new("TextButton", tabsFrame)
+analiseBtn.Size = UDim2.new(1, 0, 0, 35)
+analiseBtn.Text = "Análise"
+analiseBtn.TextColor3 = Color3.new(1,1,1)
+analiseBtn.BackgroundTransparency = 1
+analiseBtn.Font = Enum.Font.GothamBold
+analiseBtn.TextSize = 16
+analiseBtn.AutoButtonColor = false
+analiseBtn.ZIndex = 2
+
+local cameraOriginal = workspace.CurrentCamera
+local assistindo = nil
+
+analiseBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    local selectBtn = Instance.new("TextButton", content)
+    selectBtn.Size = UDim2.new(0, 180, 0, 30)
+    selectBtn.Text = "Selecionar Jogador"
+    selectBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    selectBtn.TextColor3 = Color3.new(1,1,1)
+    selectBtn.Font = Enum.Font.GothamBold
+    selectBtn.TextSize = 16
+
+    local dropdown = Instance.new("Frame", content)
+    dropdown.Size = UDim2.new(0, 180, 0, 0)
+    dropdown.BackgroundTransparency = 1
+    dropdown.Visible = false
+
+    local listLayout = Instance.new("UIListLayout", dropdown)
+    listLayout.Padding = UDim.new(0,2)
+
+    selectBtn.MouseButton1Click:Connect(function()
+        dropdown.Visible = not dropdown.Visible
+        dropdown.Size = dropdown.Visible and UDim2.new(0,180,0,150) or UDim2.new(0,180,0,0)
+
+        if dropdown.Visible then
+            for _, child in ipairs(dropdown:GetChildren()) do
+                if child:IsA("TextButton") then child:Destroy() end
+            end
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= player then
+                    local opt = Instance.new("TextButton", dropdown)
+                    opt.Size = UDim2.new(1,0,0,25)
+                    opt.Text = plr.Name
+                    opt.BackgroundColor3 = Color3.fromRGB(40,40,40)
+                    opt.TextColor3 = Color3.new(1,1,1)
+                    opt.Font = Enum.Font.Gotham
+                    opt.TextSize = 14
+                    opt.MouseButton1Click:Connect(function()
+                        if assistindo == plr then
+                            -- sair da visão e voltar para minha câmera
+                            assistindo = nil
+                            workspace.CurrentCamera.CameraSubject = player.Character:FindFirstChild("Humanoid")
+                            selectBtn.Text = "Selecionar Jogador"
+                        else
+                            assistindo = plr
+                            selectBtn.Text = plr.Name
+                            if plr.Character and plr.Character:FindFirstChild("Humanoid") then
+                                workspace.CurrentCamera.CameraSubject = plr.Character.Humanoid
+                            end
+                        end
+                        dropdown.Visible = false
+                    end)
+                end
+            end
+        end
+    end)
+end)
+
+-- =========================
+-- Nova Aba: Teleporte
+-- =========================
+local teleporteBtn = Instance.new("TextButton", tabsFrame)
+teleporteBtn.Size = UDim2.new(1, 0, 0, 35)
+teleporteBtn.Text = "Teleporte"
+teleporteBtn.TextColor3 = Color3.new(1,1,1)
+teleporteBtn.BackgroundTransparency = 1
+teleporteBtn.Font = Enum.Font.GothamBold
+teleporteBtn.TextSize = 16
+teleporteBtn.AutoButtonColor = false
+teleporteBtn.ZIndex = 2
+
+local jogadorSelecionado = nil
+
+teleporteBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    -- ScrollingFrame para lista de players
+    local scroll = Instance.new("ScrollingFrame", content)
+    scroll.Size = UDim2.new(0, 200, 0, 180)
+    scroll.CanvasSize = UDim2.new(0,0,0,0)
+    scroll.ScrollBarThickness = 6
+    scroll.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    scroll.BackgroundTransparency = 0.3
+    scroll.ZIndex = 3
+
+    local listLayout = Instance.new("UIListLayout", scroll)
+    listLayout.Padding = UDim.new(0,4)
+    listLayout.SortOrder = Enum.SortOrder.Name
+
+    -- Função para atualizar lista de players
+    local function atualizarLista()
+        for _, child in ipairs(scroll:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player then
+                local opt = Instance.new("TextButton", scroll)
+                opt.Size = UDim2.new(1, -10, 0, 25)
+                opt.Text = plr.Name
+                opt.BackgroundColor3 = Color3.fromRGB(50,50,50)
+                opt.TextColor3 = Color3.new(1,1,1)
+                opt.Font = Enum.Font.Gotham
+                opt.TextSize = 14
+                opt.ZIndex = 4
+
+                opt.MouseButton1Click:Connect(function()
+                    if jogadorSelecionado == plr then
+                        -- des-seleciona
+                        jogadorSelecionado = nil
+                        opt.BackgroundColor3 = Color3.fromRGB(50,50,50)
+                    else
+                        jogadorSelecionado = plr
+                        -- resetar cor dos outros
+                        for _, b in ipairs(scroll:GetChildren()) do
+                            if b:IsA("TextButton") then
+                                b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+                            end
+                        end
+                        opt.BackgroundColor3 = Color3.fromRGB(80,120,80)
+                    end
+                end)
+            end
+        end
+        scroll.CanvasSize = UDim2.new(0,0,0,#Players:GetPlayers()*30)
+    end
+
+    atualizarLista()
+    playerAddedConn = Players.PlayerAdded:Connect(atualizarLista)
+    playerRemovingConn = Players.PlayerRemoving:Connect(atualizarLista)
+end)
+
+-- Listener para tecla 1 (teleportar até jogador selecionado com scroll)
+inputBeganConn3 = UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.One then
+        if jogadorSelecionadoTeleport and jogadorSelecionadoTeleport.Character and jogadorSelecionadoTeleport.Character:FindFirstChild("HumanoidRootPart") then
+            local myChar = player.Character
+            if myChar and myChar:FindFirstChild("HumanoidRootPart") then
+                myChar.HumanoidRootPart.CFrame = jogadorSelecionadoTeleport.Character.HumanoidRootPart.CFrame + Vector3.new(2,0,0)
+            end
+        end
+    end
+end)
+
+
+-- Função de arrasto
+local function makeDraggable(guiObject)
+    local dragging, dragInput, dragStart, startPos
+    guiObject.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = guiObject.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    guiObject.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            guiObject.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+makeDraggable(frame)
+
+-- =========================
+-- Nova Aba: Show Races
+-- =========================
+local showRacesBtn = Instance.new("TextButton", tabsFrame)
+showRacesBtn.Size = UDim2.new(1, 0, 0, 35)
+showRacesBtn.Text = "Show Races"
+showRacesBtn.TextColor3 = Color3.new(1,1,1)
+showRacesBtn.BackgroundTransparency = 1
+showRacesBtn.Font = Enum.Font.GothamBold
+showRacesBtn.TextSize = 16
+showRacesBtn.AutoButtonColor = false
+showRacesBtn.ZIndex = 2
+
+showRacesBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    local verRacasBtn = Instance.new("TextButton", content)
+    verRacasBtn.Size = UDim2.new(0, 180, 0, 35)
+    verRacasBtn.Text = "Ver Raças"
+    verRacasBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    verRacasBtn.TextColor3 = Color3.new(1,1,1)
+    verRacasBtn.Font = Enum.Font.GothamBold
+    verRacasBtn.TextSize = 16
+    Instance.new("UICorner", verRacasBtn).CornerRadius = UDim.new(0,8)
+
+    verRacasBtn.MouseButton1Click:Connect(function()
+        local raceCustom = player:WaitForChild("PlayerGui"):WaitForChild("Main"):WaitForChild("RaceCustom")
+        raceCustom.Visible = true
+    end)
+end)
+
+-- =========================
+-- Aba: ver moveset
+-- =========================
+local verMovesetBtn = Instance.new("TextButton", tabsFrame)
+verMovesetBtn.Size = UDim2.new(1, 0, 0, 35)
+verMovesetBtn.Text = "ver moveset"
+verMovesetBtn.TextColor3 = Color3.new(1,1,1)
+verMovesetBtn.BackgroundTransparency = 1
+verMovesetBtn.Font = Enum.Font.GothamBold
+verMovesetBtn.TextSize = 14
+verMovesetBtn.AutoButtonColor = false
+verMovesetBtn.ZIndex = 2
+
+-- backup do meu moveset
+local meuMovesetBackup = nil
+
+verMovesetBtn.MouseButton1Click:Connect(function()
+    disableESP()
+    -- limpar conteúdo
+    for _, child in ipairs(content:GetChildren()) do
+        if not child:IsA("UIListLayout") then child:Destroy() end
+    end
+
+    local title = Instance.new("TextLabel", content)
+    title.Size = UDim2.new(0, 260, 0, 28)
+    title.Text = "Ver/Transferir Moveset dos Players"
+    title.BackgroundTransparency = 1
+    title.TextColor3 = Color3.new(1,1,1)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+
+    local info = Instance.new("TextLabel", content)
+    info.Size = UDim2.new(0, 260, 0, 18)
+    info.Position = UDim2.new(0, 0, 0, 30)
+    info.Text = "Clique para copiar o moveset do player selecionado para você. Role para navegar (loop)."
+    info.BackgroundTransparency = 1
+    info.TextColor3 = Color3.fromRGB(200,200,200)
+    info.Font = Enum.Font.Gotham
+    info.TextSize = 12
+
+    local list = Instance.new("Frame", content)
+    list.Size = UDim2.new(0, 260, 0, 180)
+    list.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    list.BackgroundTransparency = 0.1
+    Instance.new("UICorner", list).CornerRadius = UDim.new(0,8)
+
+    local scroll = Instance.new("ScrollingFrame", list)
+    scroll.Size = UDim2.new(1, -10, 1, -10)
+    scroll.Position = UDim2.new(0, 5, 0, 5)
+    scroll.CanvasSize = UDim2.new(0,0,0,0)
+    scroll.ScrollBarThickness = 6
+    scroll.BackgroundTransparency = 1
+
+    local listLayout = Instance.new("UIListLayout", scroll)
+    listLayout.Padding = UDim.new(0,4)
+    listLayout.SortOrder = Enum.SortOrder.Name
+
+    -- cria botões para cada player
+    local playersOrder = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        table.insert(playersOrder, plr)
+    end
+
+    local selectedIndex = 1
+    local function refreshList()
+        for _, child in ipairs(scroll:GetChildren()) do
+            if child:IsA("TextButton") then child:Destroy() end
+        end
+        for i, plr in ipairs(playersOrder) do
+            local opt = Instance.new("TextButton", scroll)
+            opt.Size = UDim2.new(1, -8, 0, 28)
+            opt.Position = UDim2.new(0,4,0,0)
+            opt.Text = plr.Name
+            opt.Font = Enum.Font.Gotham
+            opt.TextSize = 14
+            opt.TextColor3 = Color3.new(1,1,1)
+            opt.BackgroundColor3 = (i == selectedIndex) and Color3.fromRGB(80,120,80) or Color3.fromRGB(45,45,45)
+            opt.AutoButtonColor = false
+            opt.ZIndex = 5
+
+            opt.MouseButton1Click:Connect(function()
+                local sel = plr
+                -- backup meu moveset (usa `statz` já carregado no topo)
+                local myStatz = statz or player:FindFirstChild("statz")
+                if myStatz then
+                    local ok, myMoves = pcall(function() return myStatz:FindFirstChild("movesetsaving") end)
+                    if ok and myMoves and myMoves:IsA("Instance") then
+                        meuMovesetBackup = myMoves:Clone()
+                        pcall(function() myMoves:Destroy() end)
+                    end
+                end
+                -- copiar moveset do selecionado para mim
+                if sel and sel:FindFirstChild("statz") then
+                    local ok, theirMoves = pcall(function() return sel.statz:FindFirstChild("movesetsaving") end)
+                    if ok and theirMoves and theirMoves:IsA("Instance") and myStatz then
+                        local suc, clone = pcall(function() return theirMoves:Clone() end)
+                        if suc and clone then
+                            pcall(function() clone.Parent = myStatz end)
+                        end
+                    end
+                end
+                -- respawn/regenerar
+                pcall(function()
+                    if player.Character and player.Character:FindFirstChild("Humanoid") then
+                        player.Character.Humanoid.Health = 0
+                    end
+                end)
+                -- limpar lista visual
+                for _, c in ipairs(content:GetChildren()) do if not c:IsA("UIListLayout") then c:Destroy() end end
+            end)
+        end
+        scroll.CanvasSize = UDim2.new(0,0,0,#playersOrder*32)
+    end
+
+    refreshList()
+
+    -- rolagem por mouse wheel com loop
+    if wheelConn then wheelConn:Disconnect() end
+    wheelConn = UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseWheel then
+            local delta = input.Position.Z
+            if delta > 0 then
+                selectedIndex = selectedIndex - 1
+            else
+                selectedIndex = selectedIndex + 1
+            end
+            if selectedIndex < 1 then selectedIndex = #playersOrder end
+            if selectedIndex > #playersOrder then selectedIndex = 1 end
+            refreshList()
+        end
+    end)
+
+    -- botão restaurar meu moveset
+    local restaurarBtn = Instance.new("TextButton", content)
+    restaurarBtn.Size = UDim2.new(0, 200, 0, 30)
+    restaurarBtn.Position = UDim2.new(0, 30, 0, 220)
+    restaurarBtn.Text = "Ver meus movesets"
+    restaurarBtn.BackgroundColor3 = Color3.fromRGB(70,70,70)
+    restaurarBtn.TextColor3 = Color3.new(1,1,1)
+    restaurarBtn.Font = Enum.Font.GothamBold
+    restaurarBtn.TextSize = 14
+    Instance.new("UICorner", restaurarBtn).CornerRadius = UDim.new(0,6)
+
+    restaurarBtn.MouseButton1Click:Connect(function()
+        if meuMovesetBackup and player:FindFirstChild("statz") then
+            local myStatz = player.statz
+            if myStatz:FindFirstChild("movesetsaving") then
+                myStatz.movesetsaving:Destroy()
+            end
+            meuMovesetBackup:Clone().Parent = myStatz
+            meuMovesetBackup = nil
+            -- respawn para aplicar
+            if player.Character and player.Character:FindFirstChild("Humanoid") then
+                player.Character.Humanoid.Health = 0
+            end
+        end
+    end)
+
+end)
